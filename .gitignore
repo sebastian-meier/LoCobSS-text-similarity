@@ -1,3 +1,13 @@
+#venv
+locobss-text-similarity
+tmp
+questions.txt
+legacy
+ids.txt
+pre-embed.npy
+
+__pycache__
+
 # Logs
 logs
 *.log

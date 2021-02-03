@@ -1,0 +1,17 @@
+.gitignore
+.git
+.github
+LICENSE
+README.md
+TODO.md
+Dockerfile
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.pytest_cache
+/locobss-text-similarity
+tmp
+questions.txt
+legacy
+ids.txt

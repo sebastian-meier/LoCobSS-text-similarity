@@ -1,0 +1,21 @@
+{
+  "name": "locobss-text-similarity",
+  "version": "1.0.0",
+  "description": "Exploring different text similarity approaches for an unknown progressivly growing corpus",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastian-meier/LoCobSS-text-similarity.git"
+  },
+  "author": "sebastian-meier",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sebastian-meier/LoCobSS-text-similarity/issues"
+  },
+  "homepage": "https://github.com/sebastian-meier/LoCobSS-text-similarity#readme",
+  "dependencies": {
+  }
+}
