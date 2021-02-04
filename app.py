@@ -43,7 +43,7 @@ def get_similar(tree, ids, embeds, id, limit):
   try:
     id_pos = ids.tolist().index(id)
   except ValueError:
-    return 'ID not found', 404
+    return False
 
   query = dict(
     id = id,
@@ -72,6 +72,9 @@ def root():
 def similar(id):
   result_ids = get_similar(tree, ids, embeds, id, 10)
 
+  if result_ids == False:
+    return 'ID not found', 404
+
   out = {
     'ids': result_ids
   }
@@ -82,6 +85,9 @@ def similar(id):
 @app.route('/similar_random/<id>', methods=['GET'])
 def similar_random(id):
   result_ids = get_similar(tree, ids, embeds, id, 50)
+
+  if result_ids == False:
+    return 'ID not found', 404
 
   shuffle(result_ids)
 
@@ -116,6 +122,9 @@ def similar_new(id):
   new_tree = build_tree(new_ids, new_embeds)
 
   result_ids = get_similar(new_tree, new_ids, new_embeds, id, 10)
+
+  if result_ids == False:
+    return 'ID not found', 404
 
   out = {
     'ids': result_ids
