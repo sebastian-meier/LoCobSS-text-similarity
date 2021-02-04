@@ -15,3 +15,7 @@ tmp
 questions.txt
 legacy
 ids.txt
+temp.npy
+pre-embed.npy
+new_ids.txt
+new_temp.npy

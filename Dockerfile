@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu
+FROM python:3.8-slim
 
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True

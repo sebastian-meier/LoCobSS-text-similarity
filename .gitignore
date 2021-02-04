@@ -5,6 +5,9 @@ questions.txt
 legacy
 ids.txt
 pre-embed.npy
+temp.npy
+new_ids.txt
+new_temp.npy
 
 __pycache__
 

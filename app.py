@@ -5,10 +5,6 @@ logging.root.setLevel(logging.ERROR)
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 
-# import six
-# from google.cloud import translate_v2 as translate
-# import html
-
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,7 +12,7 @@ load_dotenv()
 import numpy as np
 import vptree
 
-import tensorflow_hub as hub
+from google.cloud import storage
 
 from random import shuffle
 
@@ -24,9 +20,9 @@ app = Flask(__name__)
 app.config['DEBUG'] = False
 
 # load cached ids and vectors
-ids_file = open("./ids.txt", "r")
+ids_file = open("ids.txt", "r")
 ids = np.array(ids_file.read().splitlines())
-embeds = np.load('./pre-embed.npy')
+embeds = np.load('temp.npy')
 
 def compare(p1, p2):
   return np.sqrt(np.sum(np.power(p2['data'] - p1['data'], 2)))
@@ -43,7 +39,7 @@ def build_tree (ids, embeds):
 
 tree = build_tree(ids, embeds)
 
-def get_similar(id, limit):
+def get_similar(tree, ids, embeds, id, limit):
   try:
     id_pos = ids.tolist().index(id)
   except ValueError:
@@ -67,12 +63,6 @@ def results_list (matches, id):
   
   return result_ids
 
-# load model if neccessary
-module_url = "https://tfhub.dev/google/universal-sentence-encoder/4" 
-model = hub.load(module_url)
-def embed(input):
-  return model(input)
-
 @app.route('/')
 def root():
   return 'Hello', 200
@@ -80,7 +70,7 @@ def root():
 # get similar items, limit 10
 @app.route('/similar/<id>', methods=['GET'])
 def similar(id):
-  result_ids = get_similar(id, 10)
+  result_ids = get_similar(tree, ids, embeds, id, 10)
 
   out = {
     'ids': result_ids
@@ -91,7 +81,7 @@ def similar(id):
 # get similar items randomized from top 50, limit 10
 @app.route('/similar_random/<id>', methods=['GET'])
 def similar_random(id):
-  result_ids = get_similar(id, 50)
+  result_ids = get_similar(tree, ids, embeds, id, 50)
 
   shuffle(result_ids)
 
@@ -104,36 +94,28 @@ def similar_random(id):
   return out, 200
 
 # get similar items to a new question
-@app.route('/similar_new', methods=['POST'])
-def similar_new():
+@app.route('/update/similar/<id>', methods=['GET'])
+def similar_new(id):
 
-  parser = reqparse.RequestParser()
-  parser.add_argument('question')
-  args = parser.parse_args()
+  storage_client = storage.Client()
+  bucket = storage_client.bucket(os.environ.get('GS_BUCKET'))
 
-  new_question = args["question"]
+  # store ids as text files
+  blob = bucket.blob(os.environ.get('GS_FILE_IDS'))
+  blob.download_to_filename('new_ids.txt')
 
-  # load questions
-  old_questions = open("questions.txt", "r")
-  merged_questions = np.array(old_questions.read().splitlines())
-  merged_questions = np.insert(merged_questions, 0, new_question)
+  # store embeddings
+  blob = bucket.blob(os.environ.get('GS_FILE_NPY'))
+  blob.download_to_filename('new_temp.npy')
 
-  old_ids = open("ids.txt", "r")
-  old_ids = np.array(old_ids.read().splitlines())
-  
-  # embed questions
-  new_embeds = embed(merged_questions)
+  # load cached ids and vectors
+  new_ids_file = open("new_ids.txt", "r")
+  new_ids = np.array(new_ids_file.read().splitlines())
+  new_embeds = np.load('new_temp.npy')
 
-  new_tree = build_tree(old_ids, new_embeds[1:])
+  new_tree = build_tree(new_ids, new_embeds)
 
-  query = dict(
-    id = -1,
-    data = new_embeds[0]
-  )
-
-  matches = new_tree.get_n_nearest_neighbors(query, 10)
-
-  result_ids = results_list(matches, -1)
+  result_ids = get_similar(new_tree, new_ids, new_embeds, id, 10)
 
   out = {
     'ids': result_ids
@@ -141,10 +123,12 @@ def similar_new():
 
   # Just to be sure...
   del new_tree
-  del old_questions
-  del merged_questions
-  del old_ids
+  del new_ids
+  del new_ids_file
   del new_embeds
+  del storage_client
+  del blob
+  del bucket
 
   return out, 200
 
