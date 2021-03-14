@@ -16,6 +16,8 @@ from google.cloud import storage
 
 from random import shuffle
 
+from scipy.spatial import distance
+
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
@@ -25,7 +27,7 @@ ids = np.array(ids_file.read().splitlines())
 embeds = np.load('temp.npy')
 
 def compare(p1, p2):
-  return np.sqrt(np.sum(np.power(p2['data'] - p1['data'], 2)))
+  return distance.euclidean(p1['data'], p2['data'])
 
 def build_tree (ids, embeds):
   tree_data = []
@@ -66,6 +68,29 @@ def results_list (matches, id):
 @app.route('/')
 def root():
   return 'Hello', 200
+
+# get similar items, limit 10
+@app.route('/similar/list', methods=['GET'])
+def similar_list(id):
+  ids = request.args.get('ids')
+  if (ids == False or ids == None or len(ids) == 0):
+    return 'No ids in request', 400
+
+  id_list = ids.split(',')
+
+  results = []
+  for id in id_list:
+    result_ids = get_similar(tree, ids, embeds, id, 10)
+    if result_ids != False:
+      for rid in result_ids:
+        if rid not in results:
+          results.append(rid)
+
+  out = {
+    'ids': results
+  }
+
+  return out, 200
 
 # get similar items, limit 10
 @app.route('/similar/<id>', methods=['GET'])
