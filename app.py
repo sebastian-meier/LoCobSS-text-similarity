@@ -2,7 +2,7 @@ import logging
 logging.basicConfig()
 logging.root.setLevel(logging.ERROR)
 
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 
 import os
@@ -71,16 +71,21 @@ def root():
 
 # get similar items, limit 10
 @app.route('/similar/list', methods=['GET'])
-def similar_list(id):
-  ids = request.args.get('ids')
-  if (ids == False or ids == None or len(ids) == 0):
+def similar_list():
+  ids_str = request.args.get('ids')
+
+  limit = 10
+  if request.args.get('limit'):
+    limit = int(request.args.get('limit'))
+
+  if (ids_str == False or ids_str == None or len(ids_str) == 0):
     return 'No ids in request', 400
 
-  id_list = ids.split(',')
+  id_list = ids_str.split(',')
 
   results = []
   for id in id_list:
-    result_ids = get_similar(tree, ids, embeds, id, 10)
+    result_ids = get_similar(tree, ids, embeds, id, limit)
     if result_ids != False:
       for rid in result_ids:
         if rid not in results:
