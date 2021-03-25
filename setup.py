@@ -4,6 +4,7 @@ logging.basicConfig()
 logging.root.setLevel(logging.ERROR)
 
 import numpy as np
+import tensorflow_hub as hub
 
 from google.cloud import storage
 
@@ -25,3 +26,7 @@ blob.download_to_filename('questions.txt')
 # store embeddings
 blob = bucket.blob(os.environ.get('GS_FILE_NPY'))
 blob.download_to_filename('temp.npy')
+
+# download USE for future use
+module_url = "https://tfhub.dev/google/universal-sentence-encoder/4" 
+model = hub.load(module_url)

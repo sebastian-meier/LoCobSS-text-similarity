@@ -18,6 +18,9 @@ from random import shuffle
 
 from scipy.spatial import distance
 
+import tensorflow_hub as hub
+import tensorflow as tf
+
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
@@ -170,6 +173,32 @@ def similar_new(id):
   del bucket
 
   return out, 200
+
+# get embedding vectors for a string
+@app.route('/embed', methods=['POST'])
+def embed():
+  if not request.json['text']:
+    return {
+      "message": "no text received"
+    }, 404
+
+  module_url = "https://tfhub.dev/google/universal-sentence-encoder/4" 
+  model = hub.load(module_url)
+  model_output = model([request.json['text']])
+
+  return_json = {
+    "vectors": np.array(model_output).tolist()
+  }
+
+  if 'includeSimilar' in request.json and (request.json['includeSimilar'] == True or request.json['includeSimilar'] == 'true'):
+    temp_ids = np.concatenate((ids, np.array(['-1'])))
+    temp_embeds = tf.concat([embeds, model_output], 0)
+    temp_tree = build_tree(temp_ids, temp_embeds)
+    result_ids = get_similar(temp_tree, temp_ids, temp_embeds, '-1', 10)
+    if result_ids != False:
+      return_json['similar'] = result_ids
+
+  return return_json, 200
 
 if __name__ == "__main__":
   # use 0.0.0.0 to use it in container
