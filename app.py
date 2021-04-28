@@ -25,6 +25,8 @@ import tensorflow as tf
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
+swagger = Swagger(app)
+
 # load cached ids and vectors
 ids_file = open("ids.txt", "r")
 ids = np.array(ids_file.read().splitlines())
