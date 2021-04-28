@@ -4,6 +4,7 @@ logging.root.setLevel(logging.ERROR)
 
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
+from flasgger import Swagger
 
 import os
 from dotenv import load_dotenv
@@ -70,11 +71,46 @@ def results_list (matches, id):
 
 @app.route('/')
 def root():
+  """Default endpoint for testing
+    ---
+    produces:
+      - text/plain
+    responses:
+      200:
+        description: Service is alive
+        examples:
+          text/plain: Hello
+  """
   return 'Hello', 200
 
 # get similar items, limit 10
 @app.route('/similar/list', methods=['GET'])
 def similar_list():
+  """Endpoint for generating list of similar question's ids.
+    ---
+    parameters:
+      - name: ids
+        description: comma-separated list of ids(integer)
+        type: string
+        required: true
+      - name: limit
+        description: number of ids to return
+        type: integer
+    responses:
+      400:
+        description: ids missing
+      200:
+        description: List of ids
+        schema:
+          type: object
+          properties:
+            ids:
+              type: array
+              items:
+                type: integer
+        examples: 
+          application/json: {'ids': [1, 2]}
+  """
   ids_str = request.args.get('ids')
 
   limit = 10
@@ -103,6 +139,27 @@ def similar_list():
 # get similar items, limit 10
 @app.route('/similar/<id>', methods=['GET'])
 def similar(id):
+  """Endpoint for generating list of similar question's ids.
+    ---
+    parameters:
+      - name: id
+        type: integer
+        required: true
+    responses:
+      404:
+        description: ID not found
+      200:
+        description: List of ids
+        schema:
+          type: object
+          properties:
+            ids:
+              type: array
+              items:
+                type: integer
+        examples: 
+          application/json: {'ids': [1, 2]}
+  """
   result_ids = get_similar(tree, ids, embeds, id, 10)
 
   if result_ids == False:
@@ -117,6 +174,27 @@ def similar(id):
 # get similar items randomized from top 50, limit 10
 @app.route('/similar_random/<id>', methods=['GET'])
 def similar_random(id):
+  """Endpoint for generating list of similar question's ids.
+    ---
+    parameters:
+      - name: id
+        type: integer
+        required: true
+    responses:
+      404:
+        description: ID not found
+      200:
+        description: List of ids
+        schema:
+          type: object
+          properties:
+            ids:
+              type: array
+              items:
+                type: integer
+        examples: 
+          application/json: {'ids': [1, 2]}
+  """
   result_ids = get_similar(tree, ids, embeds, id, 50)
 
   if result_ids == False:
@@ -135,7 +213,27 @@ def similar_random(id):
 # get similar items to a new question
 @app.route('/update/similar/<id>', methods=['GET'])
 def similar_new(id):
-
+  """Endpoint for generating list of similar question's ids for new question.
+    ---
+    parameters:
+      - name: id
+        type: integer
+        required: true
+    responses:
+      404:
+        description: ID not found
+      200:
+        description: List of ids
+        schema:
+          type: object
+          properties:
+            ids:
+              type: array
+              items:
+                type: integer
+        examples: 
+          application/json: {'ids': [1, 2]}
+  """
   storage_client = storage.Client()
   bucket = storage_client.bucket(os.environ.get('GS_BUCKET'))
 
@@ -177,10 +275,35 @@ def similar_new(id):
 # get embedding vectors for a string
 @app.route('/embed', methods=['POST'])
 def embed():
+    """Embed new text and retrieve similar ids.
+    ---
+    parameters:
+      - name: text
+        type: string
+        required: true
+    responses:
+      400:
+        description: no text received
+      200:
+        description: List of vectors (embed) and similar ids
+        schema:
+          type: object
+          properties:
+            vectors:
+              type: array
+              items:
+                type: float
+            similar:
+              type: array
+              items:
+                type: integer
+        examples: 
+          application/json: {'ids': [1, 2]}
+  """
   if not request.json['text']:
     return {
       "message": "no text received"
-    }, 404
+    }, 400
 
   module_url = "https://tfhub.dev/google/universal-sentence-encoder/4" 
   model = hub.load(module_url)
